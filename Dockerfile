@@ -1,16 +1,14 @@
 FROM mizzy/centos-4.8-i386:latest
 
 RUN yum makecache
-RUN yum -y install gcc automake libtool make pkgconfig rpm-build zlib-devel
+RUN yum -y install gcc automake libtool make pkgconfig zlib-devel
 
 #
 # OpenSSL 1.0.1u (for TLS 1.1/1.2 support)
 #
-COPY openssl/openssl-1.0.1u.tar.gz /tmp/
+ADD openssl/openssl-1.0.1u.tar.gz /tmp/
 
-RUN cd /tmp \
- && tar xzvf openssl-1.0.1u.tar.gz \
- && cd openssl-1.0.1u/ \
+RUN cd /tmp/openssl-1.0.1u/ \
  && /usr/bin/perl ./Configure linux-elf -Wa,--noexecstack --prefix=/opt/openssl-1.0.1u --openssldir=/opt/openssl-1.0.1u shared zlib-dynamic \
  && make depend \
  && make \
@@ -27,11 +25,9 @@ RUN echo '/opt/openssl-1.0.1u/lib' > /etc/ld.so.conf.d/openssl.conf \
 # @ https://support.shopgate.com/hc/en-us/articles/115006896288-How-do-I-upgrade-my-SSL-library-to-support-TLS-1-2-#3.1
 # "...you need to have at least cURL version 7.34.0 in order to support TLS 1.2"
 #
-COPY curl/curl-7.62.0.tar.gz /tmp/
+ADD curl/curl-7.62.0.tar.gz /tmp/
 
-RUN cd /tmp \
- && tar xzvf curl-7.62.0.tar.gz \
- && cd curl-7.62.0/ \
+RUN cd /tmp/curl-7.62.0/ \
  && LDFLAGS="-L/opt/openssl-1.0.1u/lib" \
     CPPFLAGS="-I/opt/openssl-1.0.1u/include" \
     CXXFLAGS=$CPPFLAGS \
@@ -46,16 +42,14 @@ RUN ln -s /opt/curl-7.62.0/bin/curl /usr/local/bin/curl
 #
 # nginx 1.14.1
 #
-COPY nginx/nginx-1.14.1.tar.gz /tmp/
+ADD nginx/nginx-1.14.1.tar.gz /tmp/
 ADD nginx/ngx_http_substitutions_filter_module.tar.gz /tmp/
 
 RUN yum -y install pcre-devel
 
 RUN useradd -u 1000 -m appadm
 
-RUN cd /tmp \
- && tar xzvf nginx-1.14.1.tar.gz \
- && cd nginx-1.14.1/ \
+RUN cd /tmp/nginx-1.14.1/ \
  && ./configure \
     --prefix=/opt/nginx-1.14.1 \
     --user=appadm \
@@ -112,5 +106,4 @@ EXPOSE 8080 8443
 
 STOPSIGNAL SIGTERM
 
-# CMD ["/bin/bash"]
 CMD ["nginx", "-g", "daemon off;"]
