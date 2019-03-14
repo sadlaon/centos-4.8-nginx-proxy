@@ -102,6 +102,34 @@ COPY nginx/ssl/* /etc/nginx/ssl/
 RUN ln -sf /dev/stdout /var/log/nginx/access.log \
  && ln -sf /dev/stderr /var/log/nginx/error.log
 
+#
+# Python 2.7.16
+#
+ADD python/Python-2.7.16.tgz /tmp/
+RUN cd /tmp/Python-2.7.16/ \
+ && LDFLAGS="-L/opt/openssl-1.0.1u/lib" \
+    CPPFLAGS="-I/opt/openssl-1.0.1u/include" \
+    CXXFLAGS=$CPPFLAGS \
+    CFLAGS=$CPPFLAGS \
+    LIBS="-lssl -lcrypto" \
+    ./configure --prefix=/opt/python-2.7.16/ --enable-optimizations \
+ && make altinstall
+
+#
+# pip
+#
+COPY python/get-pip.py /tmp/
+RUN cd /tmp \
+ && /opt/python-2.7.16/bin/python2.7 get-pip.py
+
+#
+# awscli
+#
+RUN /opt/python-2.7.16/bin/pip install awscli
+
+RUN yum -y install groff \
+ && /opt/python-2.7.16/bin/aws help
+
 EXPOSE 8080 8443
 
 STOPSIGNAL SIGTERM
